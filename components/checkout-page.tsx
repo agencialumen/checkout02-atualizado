@@ -98,7 +98,7 @@ export function CheckoutPage() {
   const [utmTracker, setUtmTracker] = useState<UTMTracker | null>(null)
   const [initiateCheckoutFired, setInitiateCheckoutFired] = useState(false)
 
-  // 🧪 SISTEMA DE TESTE SECRETO
+  // 🧪 SISTEMA DE TESTE REAL - Pagamento R$ 0,01
   const [testMode, setTestMode] = useState(false)
   const [secretSequence, setSecretSequence] = useState<string[]>([])
 
@@ -168,17 +168,19 @@ export function CheckoutPage() {
     },
   ]
 
-  // 🧪 SISTEMA DE TESTE SECRETO - Detectar sequência de teclas
+  // 🧪 SISTEMA DE TESTE REAL - Detectar sequência de teclas
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      const newSequence = [...secretSequence, e.key.toLowerCase()].slice(-8) // Manter apenas últimas 8 teclas
+      const newSequence = [...secretSequence, e.key.toLowerCase()].slice(-9) // Manter apenas últimas 9 teclas
       setSecretSequence(newSequence)
 
-      // Sequência secreta: "testpix0"
-      if (newSequence.join("") === "testpix0") {
+      // Sequência secreta: "testreal1" (para pagamento real de R$ 0,01)
+      if (newSequence.join("") === "testreal1") {
         setTestMode(true)
-        console.log("🧪 MODO TESTE ATIVADO - Pagamento R$ 0,00 habilitado!")
-        alert("🧪 MODO TESTE ATIVADO!\nVocê pode agora fazer pagamentos de R$ 0,00 para testar os pixels.")
+        console.log("🧪 MODO TESTE REAL ATIVADO - Pagamento R$ 0,01 para gerar Purchase real!")
+        alert(
+          "🧪 MODO TESTE REAL ATIVADO!\n\nVocê pode fazer um pagamento REAL de R$ 0,01\npara gerar evento Purchase real no TikTok Pixel.\n\nPerfeito para testar campanhas!",
+        )
       }
     }
 
@@ -186,28 +188,10 @@ export function CheckoutPage() {
     return () => window.removeEventListener("keydown", handleKeyPress)
   }, [secretSequence])
 
-  // 🧪 FUNÇÃO DE TESTE DE PURCHASE
-  const handleTestPurchase = () => {
-    if (!testMode) return
-
-    if (utmTracker) {
-      // Simular dados de transação de teste
-      const testTransactionId = `test-${Date.now()}`
-      const testValue = 0.01 // Valor mínimo para teste
-
-      console.log("🧪 TESTE: Disparando evento Purchase com valor R$ 0,00")
-      utmTracker.trackPurchase(testValue, testTransactionId)
-
-      alert(
-        `🧪 TESTE REALIZADO!\n\nEvento Purchase disparado:\n- Valor: R$ 0,01\n- Transaction ID: ${testTransactionId}\n\nVerifique o console e o TikTok Pixel Helper!`,
-      )
-    }
-  }
-
   // Adicionar após as constantes orderBumps
   const getShippingPrice = (shippingType: string) => {
-    // 🧪 Se modo teste ativo, frete grátis
-    if (testMode) return 0
+    // 🧪 Se modo teste real ativo, frete mínimo R$ 0,01
+    if (testMode) return 0.01
 
     switch (shippingType) {
       case "full":
@@ -222,7 +206,7 @@ export function CheckoutPage() {
   }
 
   const getOrderBumpPrice = (bumpId: number) => {
-    // 🧪 Se modo teste ativo, order bumps grátis
+    // 🧪 Se modo teste real ativo, order bumps não disponíveis (manter apenas frete)
     if (testMode) return 0
 
     const bump = orderBumps.find((b) => b.id === bumpId)
@@ -386,10 +370,18 @@ export function CheckoutPage() {
     if (paymentResult && utmTracker) {
       utmTracker.trackPurchase(paymentResult.totalAmount, paymentResult.transactionId)
       console.log(
-        "💰 EVENTO 3: Purchase disparado - Pagamento confirmado:",
+        "💰 EVENTO 3: Purchase REAL disparado - Pagamento confirmado:",
         paymentResult.totalAmount,
         paymentResult.transactionId,
       )
+
+      // 🧪 Log especial para modo teste
+      if (testMode) {
+        console.log("🎯 EVENTO PURCHASE REAL GERADO PARA TIKTOK!")
+        console.log("✅ Agora você pode usar este evento nas campanhas do TikTok")
+        console.log("📊 Valor:", paymentResult.totalAmount)
+        console.log("🆔 Transaction ID:", paymentResult.transactionId)
+      }
     }
   }
 
@@ -510,23 +502,21 @@ export function CheckoutPage() {
   // Resto do código do checkout permanece igual...
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* 🧪 PAINEL DE TESTE SECRETO */}
+      {/* 🧪 PAINEL DE TESTE REAL */}
       {testMode && (
-        <div className="fixed top-4 right-4 z-50 bg-red-500 text-white p-4 rounded-lg shadow-lg border-2 border-red-600">
-          <div className="text-sm font-bold mb-2">🧪 MODO TESTE ATIVO</div>
+        <div className="fixed top-4 right-4 z-50 bg-green-600 text-white p-4 rounded-lg shadow-lg border-2 border-green-700">
+          <div className="text-sm font-bold mb-2">🧪 MODO TESTE REAL</div>
           <div className="text-xs mb-3">
-            • Frete: R$ 0,00
-            <br />• Order Bumps: R$ 0,00
-            <br />• Total: R$ 0,00
+            • Pagamento REAL: R$ 0,01
+            <br />• Evento Purchase REAL
+            <br />• Válido para campanhas TikTok
+            <br />• Order bumps desabilitados
           </div>
-          <Button
-            onClick={handleTestPurchase}
-            size="sm"
-            className="w-full bg-white text-red-500 hover:bg-gray-100 text-xs"
-          >
-            🎯 TESTAR PURCHASE
-          </Button>
-          <div className="text-xs mt-2 opacity-75">Apenas você pode ver isso</div>
+          <div className="text-xs mt-2 opacity-75 bg-green-700 p-2 rounded">
+            ✅ Faça o checkout normalmente
+            <br />✅ Pague R$ 0,01 via PIX
+            <br />✅ Evento Purchase será real
+          </div>
         </div>
       )}
 
@@ -560,10 +550,12 @@ export function CheckoutPage() {
           </div>
 
           {/* Discount Banner */}
-          <div className="bg-[#2dacb5] text-white p-4 rounded-lg text-center mt-4 shadow-md">
+          <div
+            className={`${testMode ? "bg-green-600" : "bg-[#2dacb5]"} text-white p-4 rounded-lg text-center mt-4 shadow-md`}
+          >
             <div className="font-medium text-base">
               {testMode
-                ? "🧪 MODO TESTE ATIVO - Pagamento R$ 0,00"
+                ? "🧪 MODO TESTE REAL - Pagamento R$ 0,01 para gerar Purchase real"
                 : "Desconto Ativado ! Pague via pix agora e aproveite - válido somente até o fim do dia"}
             </div>
           </div>
@@ -625,14 +617,14 @@ export function CheckoutPage() {
                   </div>
                 )}
 
-                {selectedBumps.length > 0 && (
+                {selectedBumps.length > 0 && !testMode && (
                   <div className="space-y-1">
                     {selectedBumps.map((bumpId) => {
                       const bump = orderBumps.find((b) => b.id === bumpId)
                       return bump ? (
                         <div key={bumpId} className="flex justify-between text-sm">
                           <span className="text-gray-600 text-xs">{bump.title}</span>
-                          <span className="font-medium text-xs">{testMode ? "R$ 0,00" : bump.price}</span>
+                          <span className="font-medium text-xs">{bump.price}</span>
                         </div>
                       ) : null
                     })}
@@ -644,10 +636,10 @@ export function CheckoutPage() {
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <div className="text-right">
-                    <div className={`text-2xl ${testMode ? "text-red-600" : "text-green-600"}`}>
+                    <div className={`text-2xl ${testMode ? "text-green-600" : "text-green-600"}`}>
                       R$ {calculateTotal().toFixed(2).replace(".", ",")}
                     </div>
-                    {testMode && <div className="text-xs text-red-500">MODO TESTE</div>}
+                    {testMode && <div className="text-xs text-green-600">TESTE REAL</div>}
                   </div>
                 </div>
               </div>
@@ -972,6 +964,13 @@ export function CheckoutPage() {
                   {showShippingOptions && (
                     <div className="mt-6">
                       <h3 className="text-lg font-medium mb-4">Escolha o melhor frete para você</h3>
+                      {testMode && (
+                        <div className="bg-green-50 p-3 rounded-lg mb-4 border border-green-200">
+                          <p className="text-sm text-green-700 font-medium">
+                            🧪 MODO TESTE REAL: Todas as opções custam R$ 0,01 para gerar Purchase real
+                          </p>
+                        </div>
+                      )}
                       <div className="space-y-3">
                         <div
                           className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
@@ -995,7 +994,7 @@ export function CheckoutPage() {
                                 <div className="text-sm text-gray-600">Chegará amanhã (11:00 às 16:00)</div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,00" : "R$24,90"}</div>
+                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$24,90"}</div>
                           </label>
                         </div>
 
@@ -1021,7 +1020,7 @@ export function CheckoutPage() {
                                 <div className="text-sm text-gray-600">Em 3 dias úteis</div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,00" : "R$19,90"}</div>
+                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$19,90"}</div>
                           </label>
                         </div>
 
@@ -1047,7 +1046,7 @@ export function CheckoutPage() {
                                 <div className="text-sm text-gray-600">Em 12 dias úteis</div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,00" : "R$12,80"}</div>
+                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$12,80"}</div>
                           </label>
                         </div>
                       </div>
@@ -1111,84 +1110,101 @@ export function CheckoutPage() {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-teal-800 mb-2 text-lg">Pagamento Instantâneo via PIX</h4>
+                        <h4 className="font-bold text-teal-800 mb-2 text-lg">
+                          {testMode ? "🧪 Pagamento Teste Real PIX" : "Pagamento Instantâneo via PIX"}
+                        </h4>
                         <p className="text-sm text-teal-700 mb-3">
-                          Após finalizar o pedido, você receberá o código PIX e QR Code para pagamento instantâneo.
+                          {testMode
+                            ? "Você pagará R$ 0,01 via PIX para gerar um evento Purchase REAL no TikTok Pixel."
+                            : "Após finalizar o pedido, você receberá o código PIX e QR Code para pagamento instantâneo."}
                         </p>
                         <div className="bg-white/50 p-3 rounded-lg">
                           <div className="flex items-center gap-2 text-sm text-teal-800">
                             <Check className="w-4 h-4" />
-                            <span>Aprovação instantânea</span>
+                            <span>{testMode ? "Purchase real para campanhas" : "Aprovação instantânea"}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-teal-800 mt-1">
                             <Check className="w-4 h-4" />
-                            <span>Disponível 24h por dia</span>
+                            <span>{testMode ? "Evento válido no TikTok" : "Disponível 24h por dia"}</span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-teal-800 mt-1">
                             <Check className="w-4 h-4" />
-                            <span>Sem taxas adicionais</span>
+                            <span>{testMode ? "Valor mínimo R$ 0,01" : "Sem taxas adicionais"}</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Order Bumps */}
-                  <div className="mt-8">
-                    <h3 className="text-lg font-medium mb-4 text-center">Produtos recomendados para você</h3>
-                    <div className="space-y-3">
-                      {orderBumps.map((bump) => (
-                        <div
-                          key={bump.id}
-                          className={`border-2 border-dashed rounded-lg p-3 transition-all ${
-                            selectedBumps.includes(bump.id)
-                              ? "border-orange-400 bg-orange-50"
-                              : "border-gray-300 hover:border-orange-300"
-                          }`}
-                        >
-                          <div className="flex gap-3">
-                            <input
-                              type="checkbox"
-                              checked={selectedBumps.includes(bump.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  handleOrderBumpAdd(bump.id)
-                                } else {
-                                  setSelectedBumps(selectedBumps.filter((id) => id !== bump.id))
-                                }
-                              }}
-                              className="mt-1 w-4 h-4"
-                            />
-                            <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <Image
-                                src={bump.image || "/placeholder.svg?height=64&width=64"}
-                                alt={bump.title}
-                                width={64}
-                                height={64}
-                                className="w-full h-full object-cover rounded-lg"
+                  {/* Order Bumps - Desabilitados no modo teste */}
+                  {!testMode && (
+                    <div className="mt-8">
+                      <h3 className="text-lg font-medium mb-4 text-center">Produtos recomendados para você</h3>
+                      <div className="space-y-3">
+                        {orderBumps.map((bump) => (
+                          <div
+                            key={bump.id}
+                            className={`border-2 border-dashed rounded-lg p-3 transition-all ${
+                              selectedBumps.includes(bump.id)
+                                ? "border-orange-400 bg-orange-50"
+                                : "border-gray-300 hover:border-orange-300"
+                            }`}
+                          >
+                            <div className="flex gap-3">
+                              <input
+                                type="checkbox"
+                                checked={selectedBumps.includes(bump.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    handleOrderBumpAdd(bump.id)
+                                  } else {
+                                    setSelectedBumps(selectedBumps.filter((id) => id !== bump.id))
+                                  }
+                                }}
+                                className="mt-1 w-4 h-4"
                               />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm leading-tight">{bump.title}</h4>
-                              <p className="text-xs text-gray-600 mb-2 leading-tight">{bump.description}</p>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-green-600 text-sm">
-                                  {testMode ? "R$ 0,00" : bump.price}
-                                </span>
-                                <Button
-                                  size="sm"
-                                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 h-7"
-                                  onClick={() => handleOrderBumpAdd(bump.id)}
-                                >
-                                  ADICIONAR
-                                </Button>
+                              <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                <Image
+                                  src={bump.image || "/placeholder.svg?height=64&width=64"}
+                                  alt={bump.title}
+                                  width={64}
+                                  height={64}
+                                  className="w-full h-full object-cover rounded-lg"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-sm leading-tight">{bump.title}</h4>
+                                <p className="text-xs text-gray-600 mb-2 leading-tight">{bump.description}</p>
+                                <div className="flex items-center justify-between">
+                                  <span className="font-bold text-green-600 text-sm">{bump.price}</span>
+                                  <Button
+                                    size="sm"
+                                    className="bg-orange-500 hover:bg-orange-600 text-white text-xs px-3 py-1 h-7"
+                                    onClick={() => handleOrderBumpAdd(bump.id)}
+                                  >
+                                    ADICIONAR
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
+
+                  {/* Aviso modo teste */}
+                  {testMode && (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <h4 className="font-medium text-green-800 mb-2">🧪 Modo Teste Real Ativo</h4>
+                      <div className="text-sm text-green-700 space-y-1">
+                        <p>• Order bumps desabilitados para manter valor mínimo</p>
+                        <p>• Você pagará apenas R$ 0,01 via PIX</p>
+                        <p>• Evento Purchase será REAL e válido para campanhas TikTok</p>
+                        <p>• Perfeito para testar otimização de campanhas</p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Security Footer */}
                   <div className="bg-gray-50 p-4 rounded-lg">
@@ -1219,11 +1235,11 @@ export function CheckoutPage() {
                       ← Voltar
                     </Button>
                     <Button
-                      className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-medium h-12 text-base"
+                      className={`flex-1 ${testMode ? "bg-green-600 hover:bg-green-700" : "bg-teal-500 hover:bg-teal-600"} text-white font-medium h-12 text-base`}
                       onClick={handleFinalizePurchase}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "GERANDO PIX..." : "GERAR CÓDIGO PIX →"}
+                      {isProcessing ? "GERANDO PIX..." : testMode ? "GERAR PIX TESTE R$ 0,01 →" : "GERAR CÓDIGO PIX →"}
                     </Button>
                   </div>
                 </CardContent>
