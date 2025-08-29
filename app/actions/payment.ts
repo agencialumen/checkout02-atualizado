@@ -110,8 +110,8 @@ export async function processPayment(data: PaymentData) {
     // 🧪 DETECTAR MODO TESTE REAL
     const isTestMode = data.isTestMode || false
 
-    // Get client IP
-    const headersList = headers()
+    // Get client IP - Corrigido para Next.js 15
+    const headersList = await headers()
     const forwarded = headersList.get("x-forwarded-for")
     const ip = forwarded ? forwarded.split(",")[0] : headersList.get("x-real-ip") || "127.0.0.1"
 
