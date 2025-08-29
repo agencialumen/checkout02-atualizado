@@ -99,13 +99,6 @@ const getOrderBumpPrice = (bumpId: number, isTestMode = false) => {
   return Number.parseFloat(bump.price.replace("R$", "").replace(",", "."))
 }
 
-// Função para capturar parâmetros UTM do cliente
-const getUTMParamsFromClient = () => {
-  // Esta função será chamada do lado do cliente
-  // Os parâmetros UTM serão passados via localStorage ou cookies
-  return {}
-}
-
 export async function processPayment(data: PaymentData) {
   try {
     // 🧪 DETECTAR MODO TESTE REAL
@@ -228,17 +221,18 @@ export async function processPayment(data: PaymentData) {
     if (isTestMode) {
       console.log("✅ TRANSAÇÃO TESTE REAL CRIADA:")
       console.log("🆔 Transaction ID:", transaction.id)
-      console.log("💰 Valor PIX:", totalAmount)
+      console.log("💰 Valor PIX:", transaction.total_value) // ✅ Usando total_value da API
       console.log("🎯 PIX Payload gerado para R$ 1,00")
     }
 
+    // ✅ Retornar com total_value da API, mas mapeado para totalAmount para compatibilidade
     return {
       success: true,
       transaction,
       pixPayload: transaction.pix?.payload,
       transactionId: transaction.id,
       externalId,
-      totalAmount,
+      totalAmount: transaction.total_value, // ✅ Mapear total_value para totalAmount
       isTestMode, // 🧪 Passar flag para o frontend
     }
   } catch (error) {

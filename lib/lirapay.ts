@@ -37,14 +37,15 @@ interface CreateTransactionRequest {
   webhook_url: string
   items: LiraPayItem[]
   ip: string
-  customer: LiraPayCustomer // Remover & { address?: LiraPayAddress }
+  customer: LiraPayCustomer
 }
 
+// ✅ Interface corrigida baseada na documentação da API
 interface CreateTransactionResponse {
   id: string
   external_id: string
   status: "AUTHORIZED" | "PENDING" | "CHARGEBACK" | "FAILED" | "IN_DISPUTE"
-  total_value: number
+  total_value: number // ✅ API retorna "total_value", não "totalAmount"
   customer: {
     email: string
     name: string
@@ -60,10 +61,6 @@ const LIRAPAY_API_BASE = "https://api.lirapaybr.com"
 const API_SECRET =
   process.env.LIRAPAY_API_SECRET ||
   "sk_2d1ec37d32b6f581fcc6edf95662201732a8684dce1fd1c834796082b98dbacac5f9d93af83e8ea5a64833f878215196391ffd18cd5d99623cfac77a8175377d"
-
-// if (!API_SECRET) {
-//   throw new Error("LIRAPAY_API_SECRET environment variable is required")
-// }
 
 export async function createTransaction(data: CreateTransactionRequest): Promise<CreateTransactionResponse> {
   const response = await fetch(`${LIRAPAY_API_BASE}/v1/transactions`, {
