@@ -36,9 +36,9 @@ interface PaymentData {
 }
 
 const getShippingPrice = (shippingType: string, isTestMode = false) => {
-  // 🧪 Se modo teste real, valor mínimo para cobrir taxas LiraPay (26,4%)
-  // Valor mínimo: R$ 1,00 (taxa: R$ 0,26 | líquido: R$ 0,74)
-  if (isTestMode) return 1.0
+  // 🧪 Se modo teste real, valor mínimo para cobrir taxas LiraPay
+  // AUMENTADO: R$ 5,00 (taxa: R$ 1,32 | líquido: R$ 3,68)
+  if (isTestMode) return 5.0 // ✅ Aumentado de 1.0 para 5.0
 
   switch (shippingType) {
     case "full":
@@ -115,24 +115,24 @@ export async function processPayment(data: PaymentData) {
       return total + getOrderBumpPrice(bumpId, isTestMode)
     }, 0)
 
-    // 🧪 FORÇAR VALOR MÍNIMO NO MODO TESTE (R$ 1,00 para cobrir taxas)
+    // 🧪 FORÇAR VALOR MÍNIMO NO MODO TESTE (R$ 5,00 para cobrir taxas)
     let totalAmount = shippingCost + orderBumpsCost
 
     if (isTestMode) {
-      totalAmount = 1.0 // R$ 1,00 para cobrir taxa de 26,4% (R$ 0,26)
-      console.log("🧪 MODO TESTE REAL: Valor ajustado para R$ 1,00 (mín. para cobrir taxas LiraPay)")
+      totalAmount = 5.0 // ✅ R$ 5,00 para cobrir taxa de 26,4% (R$ 1,32)
+      console.log("🧪 MODO TESTE REAL: Valor ajustado para R$ 5,00 (suficiente para cobrir taxas LiraPay)")
     }
 
     // Build items array
     const items = []
 
     if (isTestMode) {
-      // 🧪 MODO TESTE: Item único de R$ 1,00
+      // 🧪 MODO TESTE: Item único de R$ 5,00
       items.push({
         id: "test-purchase-real",
         title: "🧪 Teste Real - Purchase Event",
-        description: "Pagamento mínimo para gerar evento Purchase real no TikTok Pixel (cobre taxas LiraPay 26,4%)",
-        price: 1.0,
+        description: "Pagamento para gerar evento Purchase real no TikTok Pixel (cobre taxas LiraPay 26,4%)",
+        price: 5.0, // ✅ Aumentado para 5.0
         quantity: 1,
         is_physical: false,
       })
@@ -221,8 +221,8 @@ export async function processPayment(data: PaymentData) {
     if (isTestMode) {
       console.log("✅ TRANSAÇÃO TESTE REAL CRIADA:")
       console.log("🆔 Transaction ID:", transaction.id)
-      console.log("💰 Valor PIX:", transaction.total_value) // ✅ Usando total_value da API
-      console.log("🎯 PIX Payload gerado para R$ 1,00")
+      console.log("💰 Valor PIX:", transaction.total_value)
+      console.log("🎯 PIX Payload gerado para R$ 5,00")
     }
 
     // ✅ Retornar com total_value da API, mas mapeado para totalAmount para compatibilidade

@@ -190,8 +190,8 @@ export function CheckoutPage() {
 
   // Adicionar após as constantes orderBumps
   const getShippingPrice = (shippingType: string) => {
-    // 🧪 Se modo teste real ativo, valor mínimo R$ 1,00
-    if (testMode) return 1.0
+    // 🧪 Se modo teste real ativo, valor mínimo R$ 5,00
+    if (testMode) return 5.0 // ✅ Aumentado de 1.0 para 5.0
 
     switch (shippingType) {
       case "full":
@@ -215,8 +215,8 @@ export function CheckoutPage() {
   }
 
   const calculateTotal = () => {
-    // 🧪 Se modo teste real, forçar R$ 1,00
-    if (testMode) return 1.0
+    // 🧪 Se modo teste real, forçar R$ 5,00
+    if (testMode) return 5.0 // ✅ Aumentado de 1.0 para 5.0
 
     const shippingCost = getShippingPrice(selectedShipping)
     const orderBumpsCost = selectedBumps.reduce((total, bumpId) => {
@@ -522,15 +522,15 @@ export function CheckoutPage() {
         <div className="fixed top-4 right-4 z-50 bg-green-600 text-white p-4 rounded-lg shadow-lg border-2 border-green-700">
           <div className="text-sm font-bold mb-2">🧪 MODO TESTE REAL</div>
           <div className="text-xs mb-3">
-            • Pagamento REAL: R$ 1,00
-            <br />• Taxa LiraPay: R$ 0,26 (26,4%)
-            <br />• Valor líquido: R$ 0,74
+            • Pagamento REAL: R$ 5,00 {/* ✅ Atualizado */}
+            <br />• Taxa LiraPay: R$ 1,32 (26,4%) {/* ✅ Atualizado */}
+            <br />• Valor líquido: R$ 3,68 {/* ✅ Atualizado */}
             <br />• Evento Purchase REAL
             <br />• Válido para campanhas TikTok
           </div>
           <div className="text-xs mt-2 opacity-75 bg-green-700 p-2 rounded">
             ✅ Faça o checkout normalmente
-            <br />✅ Pague R$ 1,00 via PIX
+            <br />✅ Pague R$ 5,00 via PIX {/* ✅ Atualizado */}
             <br />✅ Evento Purchase será real
           </div>
         </div>
