@@ -98,7 +98,7 @@ export function CheckoutPage() {
   const [utmTracker, setUtmTracker] = useState<UTMTracker | null>(null)
   const [initiateCheckoutFired, setInitiateCheckoutFired] = useState(false)
 
-  // 🧪 SISTEMA DE TESTE REAL - Pagamento R$ 0,01
+  // 🧪 SISTEMA DE TESTE REAL - Pagamento R$ 1,00
   const [testMode, setTestMode] = useState(false)
   const [secretSequence, setSecretSequence] = useState<string[]>([])
 
@@ -174,12 +174,12 @@ export function CheckoutPage() {
       const newSequence = [...secretSequence, e.key.toLowerCase()].slice(-9) // Manter apenas últimas 9 teclas
       setSecretSequence(newSequence)
 
-      // Sequência secreta: "testreal1" (para pagamento real de R$ 0,01)
+      // Sequência secreta: "testreal1" (para pagamento real de R$ 1,00)
       if (newSequence.join("") === "testreal1") {
         setTestMode(true)
-        console.log("🧪 MODO TESTE REAL ATIVADO - Pagamento R$ 0,01 para gerar Purchase real!")
+        console.log("🧪 MODO TESTE REAL ATIVADO - Pagamento R$ 1,00 para gerar Purchase real!")
         alert(
-          "🧪 MODO TESTE REAL ATIVADO!\n\nVocê pode fazer um pagamento REAL de R$ 0,01\npara gerar evento Purchase real no TikTok Pixel.\n\nPerfeito para testar campanhas!",
+          "🧪 MODO TESTE REAL ATIVADO!\n\nVocê pode fazer um pagamento REAL de R$ 1,00\npara gerar evento Purchase real no TikTok Pixel.\n\n💳 Taxa LiraPay: R$ 0,26 (26,4%)\n💵 Valor líquido: R$ 0,74\n\nPerfeito para testar campanhas!",
         )
       }
     }
@@ -190,8 +190,8 @@ export function CheckoutPage() {
 
   // Adicionar após as constantes orderBumps
   const getShippingPrice = (shippingType: string) => {
-    // 🧪 Se modo teste real ativo, frete mínimo R$ 0,01
-    if (testMode) return 0.01
+    // 🧪 Se modo teste real ativo, valor mínimo R$ 1,00
+    if (testMode) return 1.0
 
     switch (shippingType) {
       case "full":
@@ -215,8 +215,8 @@ export function CheckoutPage() {
   }
 
   const calculateTotal = () => {
-    // 🧪 Se modo teste real, forçar R$ 0,01
-    if (testMode) return 0.01
+    // 🧪 Se modo teste real, forçar R$ 1,00
+    if (testMode) return 1.0
 
     const shippingCost = getShippingPrice(selectedShipping)
     const orderBumpsCost = selectedBumps.reduce((total, bumpId) => {
@@ -339,7 +339,7 @@ export function CheckoutPage() {
         isTestMode: testMode, // 🧪 Passar flag do modo teste
       })
 
-      if (result.success) {
+      if (result.success && result.totalAmount !== undefined) {
         setPaymentResult(result)
         setShowPixPayment(true)
 
@@ -347,11 +347,13 @@ export function CheckoutPage() {
         if (testMode) {
           console.log("🧪 PIX TESTE REAL GERADO:")
           console.log("💰 Valor:", result.totalAmount)
+          console.log("💳 Taxa LiraPay (26,4%):", (result.totalAmount * 0.264).toFixed(2))
+          console.log("💵 Valor líquido:", (result.totalAmount * 0.736).toFixed(2))
           console.log("🆔 Transaction ID:", result.transactionId)
-          console.log("🎯 Agora pague R$ 0,01 para gerar Purchase real!")
+          console.log("🎯 Agora pague R$ 1,00 para gerar Purchase real!")
         }
       } else {
-        alert(`Erro no pagamento: ${result.error}`)
+        alert(`Erro no pagamento: ${result.error || "Erro desconhecido"}`)
       }
     } catch (error) {
       console.error("Payment error:", error)
@@ -376,10 +378,9 @@ export function CheckoutPage() {
     }
   }
 
-  // EVENTO 3: Purchase - Quando pagamento é realmente confirmado
   const handlePaymentConfirmed = () => {
     // EVENTO 3: Disparar Purchase quando PIX é confirmado
-    if (paymentResult && utmTracker) {
+    if (paymentResult && utmTracker && paymentResult.totalAmount !== undefined) {
       utmTracker.trackPurchase(paymentResult.totalAmount, paymentResult.transactionId)
       console.log(
         "💰 EVENTO 3: Purchase REAL disparado - Pagamento confirmado:",
@@ -392,6 +393,8 @@ export function CheckoutPage() {
         console.log("🎯 EVENTO PURCHASE REAL GERADO PARA TIKTOK!")
         console.log("✅ Agora você pode usar este evento nas campanhas do TikTok")
         console.log("📊 Valor:", paymentResult.totalAmount)
+        console.log("💳 Taxa LiraPay:", (paymentResult.totalAmount * 0.264).toFixed(2))
+        console.log("💵 Valor líquido:", (paymentResult.totalAmount * 0.736).toFixed(2))
         console.log("🆔 Transaction ID:", paymentResult.transactionId)
       }
     }
@@ -519,14 +522,15 @@ export function CheckoutPage() {
         <div className="fixed top-4 right-4 z-50 bg-green-600 text-white p-4 rounded-lg shadow-lg border-2 border-green-700">
           <div className="text-sm font-bold mb-2">🧪 MODO TESTE REAL</div>
           <div className="text-xs mb-3">
-            • Pagamento REAL: R$ 0,01
+            • Pagamento REAL: R$ 1,00
+            <br />• Taxa LiraPay: R$ 0,26 (26,4%)
+            <br />• Valor líquido: R$ 0,74
             <br />• Evento Purchase REAL
             <br />• Válido para campanhas TikTok
-            <br />• Order bumps desabilitados
           </div>
           <div className="text-xs mt-2 opacity-75 bg-green-700 p-2 rounded">
             ✅ Faça o checkout normalmente
-            <br />✅ Pague R$ 0,01 via PIX
+            <br />✅ Pague R$ 1,00 via PIX
             <br />✅ Evento Purchase será real
           </div>
         </div>
@@ -567,7 +571,7 @@ export function CheckoutPage() {
           >
             <div className="font-medium text-base">
               {testMode
-                ? "🧪 MODO TESTE REAL - Pagamento R$ 0,01 para gerar Purchase real"
+                ? "🧪 MODO TESTE REAL - Pagamento R$ 1,00 para gerar Purchase real (taxa R$ 0,26)"
                 : "Desconto Ativado ! Pague via pix agora e aproveite - válido somente até o fim do dia"}
             </div>
           </div>
@@ -606,7 +610,7 @@ export function CheckoutPage() {
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
                         {testMode
-                          ? "Pagamento simbólico para gerar evento Purchase real"
+                          ? "Pagamento mínimo para gerar evento Purchase real"
                           : "9 Pacotes de Fraldas + 6 Pacotes de Lenços"}
                       </p>
                       <div className="flex items-center justify-between">
@@ -623,8 +627,27 @@ export function CheckoutPage() {
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">{testMode ? "Teste Real" : "Subtotal (1 item)"}</span>
-                  <span className="font-medium">R$ {testMode ? "0,01" : "0,00"}</span>
+                  <span className="font-medium">R$ {testMode ? "1,00" : "0,00"}</span>
                 </div>
+
+                {testMode && (
+                  <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                    <div className="text-xs text-green-700 space-y-1">
+                      <div className="flex justify-between">
+                        <span>Valor bruto:</span>
+                        <span>R$ 1,00</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Taxa LiraPay (26,4%):</span>
+                        <span>- R$ 0,26</span>
+                      </div>
+                      <div className="flex justify-between font-medium border-t border-green-300 pt-1">
+                        <span>Valor líquido:</span>
+                        <span>R$ 0,74</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {!testMode && selectedShipping && (
                   <div className="flex justify-between text-sm">
@@ -657,7 +680,7 @@ export function CheckoutPage() {
                     <div className={`text-2xl ${testMode ? "text-green-600" : "text-green-600"}`}>
                       R$ {calculateTotal().toFixed(2).replace(".", ",")}
                     </div>
-                    {testMode && <div className="text-xs text-green-600">TESTE REAL - R$ 0,01</div>}
+                    {testMode && <div className="text-xs text-green-600">TESTE REAL - R$ 1,00</div>}
                   </div>
                 </div>
               </div>
@@ -982,13 +1005,14 @@ export function CheckoutPage() {
                   {showShippingOptions && (
                     <div className="mt-6">
                       <h3 className="text-lg font-medium mb-4">
-                        {testMode ? "🧪 Opção de Teste (R$ 0,01)" : "Escolha o melhor frete para você"}
+                        {testMode ? "🧪 Opção de Teste (R$ 1,00)" : "Escolha o melhor frete para você"}
                       </h3>
                       {testMode && (
                         <div className="bg-green-50 p-3 rounded-lg mb-4 border border-green-200">
                           <p className="text-sm text-green-700 font-medium">
-                            🧪 MODO TESTE REAL: Todas as opções custam R$ 0,01 para gerar Purchase real
+                            🧪 MODO TESTE REAL: Todas as opções custam R$ 1,00 para gerar Purchase real
                           </p>
+                          <p className="text-xs text-green-600 mt-1">Taxa LiraPay: R$ 0,26 | Valor líquido: R$ 0,74</p>
                         </div>
                       )}
                       <div className="space-y-3">
@@ -1014,11 +1038,11 @@ export function CheckoutPage() {
                                   {testMode ? "🧪 Teste Real - Opção 1" : "Frete Full (Receba em Até 24hrs)"}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                  {testMode ? "Pagamento simbólico" : "Chegará amanhã (11:00 às 16:00)"}
+                                  {testMode ? "Pagamento mínimo para teste" : "Chegará amanhã (11:00 às 16:00)"}
                                 </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">R$0,01</div>
+                            <div className="font-bold text-lg">R$1,00</div>
                           </label>
                         </div>
 
@@ -1044,11 +1068,11 @@ export function CheckoutPage() {
                                   {testMode ? "🧪 Teste Real - Opção 2" : "Correios (SEDEX)"}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                  {testMode ? "Pagamento simbólico" : "Em 3 dias úteis"}
+                                  {testMode ? "Pagamento mínimo para teste" : "Em 3 dias úteis"}
                                 </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">R$0,01</div>
+                            <div className="font-bold text-lg">R$1,00</div>
                           </label>
                         </div>
 
@@ -1074,17 +1098,17 @@ export function CheckoutPage() {
                                   {testMode ? "🧪 Teste Real - Opção 3" : "Correios (PAC)"}
                                 </div>
                                 <div className="text-sm text-gray-600">
-                                  {testMode ? "Pagamento simbólico" : "Em 12 dias úteis"}
+                                  {testMode ? "Pagamento mínimo para teste" : "Em 12 dias úteis"}
                                 </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">R$0,01</div>
+                            <div className="font-bold text-lg">R$1,00</div>
                           </label>
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-3">
                         {testMode
-                          ? "🧪 Todas as opções geram o mesmo PIX de R$ 0,01 para teste real"
+                          ? "🧪 Todas as opções geram o mesmo PIX de R$ 1,00 para teste real"
                           : "A previsão de entrega pode variar de acordo com a região e facilidade de acesso ao seu endereço"}
                       </p>
                     </div>
@@ -1097,7 +1121,7 @@ export function CheckoutPage() {
                       </h3>
                       <p className="text-sm text-gray-600 mb-2">
                         {testMode
-                          ? "Preencha seu CEP para continuar com o teste de R$ 0,01"
+                          ? "Preencha seu CEP para continuar com o teste de R$ 1,00"
                           : "Preencha seu CEP para encontrar o melhor frete"}
                       </p>
                       <p className="text-xs text-gray-500">
@@ -1121,7 +1145,7 @@ export function CheckoutPage() {
                       onClick={() => setCurrentStep("payment")}
                       disabled={!showShippingOptions || !selectedShipping}
                     >
-                      {testMode ? "IR PARA TESTE PIX R$ 0,01 →" : "IR PARA O PAGAMENTO →"}
+                      {testMode ? "IR PARA TESTE PIX R$ 1,00 →" : "IR PARA O PAGAMENTO →"}
                     </Button>
                   </div>
                 </CardContent>
@@ -1132,7 +1156,7 @@ export function CheckoutPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-xl">
-                    {testMode ? "🧪 Teste Real - PIX R$ 0,01" : "Pagamento via PIX"}
+                    {testMode ? "🧪 Teste Real - PIX R$ 1,00" : "Pagamento via PIX"}
                   </CardTitle>
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <Shield className="w-4 h-4" />
@@ -1159,7 +1183,7 @@ export function CheckoutPage() {
                         </h4>
                         <p className="text-sm text-teal-700 mb-3">
                           {testMode
-                            ? "Você pagará R$ 0,01 via PIX para gerar um evento Purchase REAL no TikTok Pixel."
+                            ? "Você pagará R$ 1,00 via PIX para gerar um evento Purchase REAL no TikTok Pixel."
                             : "Após finalizar o pedido, você receberá o código PIX e QR Code para pagamento instantâneo."}
                         </p>
                         <div className="bg-white/50 p-3 rounded-lg">
@@ -1173,7 +1197,7 @@ export function CheckoutPage() {
                           </div>
                           <div className="flex items-center gap-2 text-sm text-teal-800 mt-1">
                             <Check className="w-4 h-4" />
-                            <span>{testMode ? "Valor mínimo R$ 0,01" : "Sem taxas adicionais"}</span>
+                            <span>{testMode ? "Valor mínimo R$ 1,00" : "Sem taxas adicionais"}</span>
                           </div>
                         </div>
                       </div>
@@ -1243,7 +1267,8 @@ export function CheckoutPage() {
                       <h4 className="font-medium text-green-800 mb-2">🧪 Modo Teste Real Ativo</h4>
                       <div className="text-sm text-green-700 space-y-1">
                         <p>• Order bumps desabilitados para manter valor mínimo</p>
-                        <p>• Você pagará apenas R$ 0,01 via PIX</p>
+                        <p>• Você pagará apenas R$ 1,00 via PIX</p>
+                        <p>• Taxa LiraPay: R$ 0,26 (26,4%) | Líquido: R$ 0,74</p>
                         <p>• Evento Purchase será REAL e válido para campanhas TikTok</p>
                         <p>• Perfeito para testar otimização de campanhas</p>
                       </div>
@@ -1283,7 +1308,7 @@ export function CheckoutPage() {
                       onClick={handleFinalizePurchase}
                       disabled={isProcessing}
                     >
-                      {isProcessing ? "GERANDO PIX..." : testMode ? "GERAR PIX TESTE R$ 0,01 →" : "GERAR CÓDIGO PIX →"}
+                      {isProcessing ? "GERANDO PIX..." : testMode ? "GERAR PIX TESTE R$ 1,00 →" : "GERAR CÓDIGO PIX →"}
                     </Button>
                   </div>
                 </CardContent>

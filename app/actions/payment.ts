@@ -36,8 +36,9 @@ interface PaymentData {
 }
 
 const getShippingPrice = (shippingType: string, isTestMode = false) => {
-  // 🧪 Se modo teste real, sempre R$ 0,01
-  if (isTestMode) return 0.01
+  // 🧪 Se modo teste real, valor mínimo para cobrir taxas LiraPay (26,4%)
+  // Valor mínimo: R$ 1,00 (taxa: R$ 0,26 | líquido: R$ 0,74)
+  if (isTestMode) return 1.0
 
   switch (shippingType) {
     case "full":
@@ -53,7 +54,7 @@ const getShippingPrice = (shippingType: string, isTestMode = false) => {
 
 const getShippingTitle = (shippingType: string, isTestMode = false) => {
   if (isTestMode) {
-    return "🧪 Teste Real - Frete Simbólico"
+    return "🧪 Teste Real - Frete Mínimo"
   }
 
   switch (shippingType) {
@@ -121,24 +122,24 @@ export async function processPayment(data: PaymentData) {
       return total + getOrderBumpPrice(bumpId, isTestMode)
     }, 0)
 
-    // 🧪 FORÇAR VALOR MÍNIMO NO MODO TESTE
+    // 🧪 FORÇAR VALOR MÍNIMO NO MODO TESTE (R$ 1,00 para cobrir taxas)
     let totalAmount = shippingCost + orderBumpsCost
 
     if (isTestMode) {
-      totalAmount = 0.01 // Forçar exatamente R$ 0,01
-      console.log("🧪 MODO TESTE REAL: Valor forçado para R$ 0,01")
+      totalAmount = 1.0 // R$ 1,00 para cobrir taxa de 26,4% (R$ 0,26)
+      console.log("🧪 MODO TESTE REAL: Valor ajustado para R$ 1,00 (mín. para cobrir taxas LiraPay)")
     }
 
     // Build items array
     const items = []
 
     if (isTestMode) {
-      // 🧪 MODO TESTE: Item único de R$ 0,01
+      // 🧪 MODO TESTE: Item único de R$ 1,00
       items.push({
         id: "test-purchase-real",
         title: "🧪 Teste Real - Purchase Event",
-        description: "Pagamento simbólico para gerar evento Purchase real no TikTok Pixel",
-        price: 0.01,
+        description: "Pagamento mínimo para gerar evento Purchase real no TikTok Pixel (cobre taxas LiraPay 26,4%)",
+        price: 1.0,
         quantity: 1,
         is_physical: false,
       })
@@ -194,6 +195,8 @@ export async function processPayment(data: PaymentData) {
     if (isTestMode) {
       console.log("🧪 PROCESSANDO PAGAMENTO TESTE REAL:")
       console.log("💰 Valor total:", totalAmount)
+      console.log("💳 Taxa LiraPay (26,4%):", (totalAmount * 0.264).toFixed(2))
+      console.log("💵 Valor líquido:", (totalAmount * 0.736).toFixed(2))
       console.log("📦 Items:", items)
       console.log("🆔 External ID:", externalId)
     }
@@ -226,7 +229,7 @@ export async function processPayment(data: PaymentData) {
       console.log("✅ TRANSAÇÃO TESTE REAL CRIADA:")
       console.log("🆔 Transaction ID:", transaction.id)
       console.log("💰 Valor PIX:", totalAmount)
-      console.log("🎯 PIX Payload gerado para R$ 0,01")
+      console.log("🎯 PIX Payload gerado para R$ 1,00")
     }
 
     return {
