@@ -53,32 +53,14 @@ export function TikTokPixel() {
     // Verificar se já está pronto imediatamente
     if (window.ttq && typeof window.ttq === "function") {
       console.log("✅ TikTok Pixel ready immediately after script load!")
-      window.tiktokPixelReady = true
-
-      // Executar callbacks pendentes
-      window.tiktokPixelCallbacks?.forEach((callback) => {
-        try {
-          callback()
-        } catch (error) {
-          console.error("❌ TikTok callback error:", error)
-        }
-      })
-      window.tiktokPixelCallbacks = []
+      window.ttq.page()
     } else {
       // Se não estiver pronto, aguardar um pouco mais
       console.log("⏳ TikTok Script loaded but ttq not ready yet, waiting...")
       setTimeout(() => {
-        if (window.ttq && typeof window.ttq === "function" && !window.tiktokPixelReady) {
+        if (window.ttq && typeof window.ttq === "function") {
           console.log("✅ TikTok Pixel ready after timeout!")
-          window.tiktokPixelReady = true
-          window.tiktokPixelCallbacks?.forEach((callback) => {
-            try {
-              callback()
-            } catch (error) {
-              console.error("❌ TikTok callback error:", error)
-            }
-          })
-          window.tiktokPixelCallbacks = []
+          window.ttq.page()
         }
       }, 1000)
     }
@@ -99,7 +81,7 @@ export function TikTokPixel() {
               ;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
               
               console.log("🚀 TikTok Pixel: Initializing with official code...");
-              ttq.load('D2O8GLJC77UBPJ3311FG');
+              ttq.load('D2HPODRC77U4ENLNET30');
               console.log("📡 TikTok: Pixel loaded without PageView");
             }(window, document, 'ttq');
           `,

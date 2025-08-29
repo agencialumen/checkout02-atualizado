@@ -51,38 +51,7 @@ export class UTMTracker {
     return this.utmParams
   }
 
-  // Sistema inteligente para executar eventos TikTok
-  private executeTikTokEvent(eventName: string, eventData: any) {
-    if (typeof window === "undefined") return
-
-    // Se já está pronto, executar imediatamente
-    if (window.tiktokPixelReady && window.ttq && typeof window.ttq === "function") {
-      try {
-        console.log(`🎯 TikTok ${eventName}: Executing immediately`)
-        window.ttq("track", eventName, eventData)
-        console.log(`✅ TikTok ${eventName}:`, eventData.value || eventData.content_name)
-        return
-      } catch (error) {
-        console.log(`❌ TikTok ${eventName} error:`, error)
-        return
-      }
-    }
-
-    // Se não está pronto, adicionar ao callback queue
-    console.log(`⏳ TikTok ${eventName}: Adding to callback queue`)
-    window.tiktokPixelCallbacks = window.tiktokPixelCallbacks || []
-    window.tiktokPixelCallbacks.push(() => {
-      try {
-        console.log(`🎯 TikTok ${eventName}: Executing from callback`)
-        window.ttq("track", eventName, eventData)
-        console.log(`✅ TikTok ${eventName}:`, eventData.value || eventData.content_name)
-      } catch (error) {
-        console.log(`❌ TikTok ${eventName} callback error:`, error)
-      }
-    })
-  }
-
-  // EVENTO 1: InitiateCheckout
+  // 🎯 EVENTO 1: InitiateCheckout - Entrada no checkout
   public trackInitiateCheckout(value: number, currency = "BRL") {
     if (typeof window === "undefined") return
 
@@ -107,28 +76,35 @@ export class UTMTracker {
       }
     }
 
-    // TikTok Pixel - Sistema inteligente
-    const eventData = {
-      value: value,
-      currency: currency,
-      content_type: "product",
-      content_id: "kit-pampers-premium",
-      content_name: "Kit Pampers Premium",
-      content_category: "Baby Products",
-      quantity: 1,
-      ...utmParams,
+    // TikTok Pixel - Simplificado
+    if (window.ttq && typeof window.ttq === "function") {
+      try {
+        window.ttq("track", "InitiateCheckout", {
+          value: value,
+          currency: currency,
+          content_type: "product",
+          content_id: "kit-pampers-premium",
+          content_name: "Kit Pampers Premium",
+          content_category: "Baby Products",
+          quantity: 1,
+          ...utmParams,
+        })
+        console.log("🎯 TikTok InitiateCheckout:", value)
+      } catch (error) {
+        console.log("❌ TikTok InitiateCheckout error:", error)
+      }
+    } else {
+      console.log("⚠️ TikTok pixel não disponível para InitiateCheckout")
     }
-
-    this.executeTikTokEvent("InitiateCheckout", eventData)
   }
 
-  // EVENTO 2: AddToCart
+  // 🎯 EVENTO 2: AddToCart - Order bumps adicionados
   public trackAddToCart(value: number, contentId: string, contentName: string) {
     if (typeof window === "undefined") return
 
     const utmParams = this.getUTMParams()
 
-    // Meta Pixel - com proteção
+    // Meta Pixel
     if (window.fbq && typeof window.fbq === "function") {
       try {
         window.fbq("track", "AddToCart", {
@@ -146,38 +122,35 @@ export class UTMTracker {
       }
     }
 
-    // TikTok Pixel - Sistema inteligente com proteção extra
-    const eventData = {
-      value: value,
-      currency: "BRL",
-      content_type: "product",
-      content_id: contentId,
-      content_name: contentName,
-      content_category: "Baby Products",
-      quantity: 1,
-      ...utmParams,
-    }
-
+    // TikTok Pixel - Simplificado
     if (window.ttq && typeof window.ttq === "function") {
       try {
-        console.log(`🎯 TikTok AddToCart: Executing immediately`)
-        window.ttq("track", "AddToCart", eventData)
-        console.log(`✅ TikTok AddToCart:`, eventData.content_name)
+        window.ttq("track", "AddToCart", {
+          value: value,
+          currency: "BRL",
+          content_type: "product",
+          content_id: contentId,
+          content_name: contentName,
+          content_category: "Baby Products",
+          quantity: 1,
+          ...utmParams,
+        })
+        console.log("🎯 TikTok AddToCart:", contentName, value)
       } catch (error) {
-        console.log(`❌ TikTok AddToCart error:`, error)
+        console.log("❌ TikTok AddToCart error:", error)
       }
     } else {
-      this.executeTikTokEvent("AddToCart", eventData)
+      console.log("⚠️ TikTok pixel não disponível para AddToCart")
     }
   }
 
-  // EVENTO 3: Purchase
+  // 🎯 EVENTO 3: Purchase - Pagamento confirmado
   public trackPurchase(value: number, transactionId: string, currency = "BRL") {
     if (typeof window === "undefined") return
 
     const utmParams = this.getUTMParams()
 
-    // Meta Pixel - com proteção
+    // Meta Pixel
     if (window.fbq && typeof window.fbq === "function") {
       try {
         window.fbq("track", "Purchase", {
@@ -197,29 +170,26 @@ export class UTMTracker {
       }
     }
 
-    // TikTok Pixel - Sistema inteligente com proteção extra
-    const eventData = {
-      value: value,
-      currency: currency,
-      content_type: "product",
-      content_id: "kit-pampers-premium",
-      content_name: "Kit Pampers Premium",
-      content_category: "Baby Products",
-      quantity: 1,
-      order_id: transactionId,
-      ...utmParams,
-    }
-
+    // TikTok Pixel - Simplificado
     if (window.ttq && typeof window.ttq === "function") {
       try {
-        console.log(`🎯 TikTok Purchase: Executing immediately`)
-        window.ttq("track", "Purchase", eventData)
-        console.log(`✅ TikTok Purchase:`, eventData.content_name)
+        window.ttq("track", "Purchase", {
+          value: value,
+          currency: currency,
+          content_type: "product",
+          content_id: "kit-pampers-premium",
+          content_name: "Kit Pampers Premium",
+          content_category: "Baby Products",
+          quantity: 1,
+          order_id: transactionId,
+          ...utmParams,
+        })
+        console.log("🎯 TikTok Purchase:", value, transactionId)
       } catch (error) {
-        console.log(`❌ TikTok Purchase error:`, error)
+        console.log("❌ TikTok Purchase error:", error)
       }
     } else {
-      this.executeTikTokEvent("Purchase", eventData)
+      console.log("⚠️ TikTok pixel não disponível para Purchase")
     }
   }
 }
