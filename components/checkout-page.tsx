@@ -215,6 +215,9 @@ export function CheckoutPage() {
   }
 
   const calculateTotal = () => {
+    // 🧪 Se modo teste real, forçar R$ 0,01
+    if (testMode) return 0.01
+
     const shippingCost = getShippingPrice(selectedShipping)
     const orderBumpsCost = selectedBumps.reduce((total, bumpId) => {
       return total + getOrderBumpPrice(bumpId)
@@ -333,11 +336,20 @@ export function CheckoutPage() {
         country: addressData.country,
         selectedShipping,
         selectedBumps,
+        isTestMode: testMode, // 🧪 Passar flag do modo teste
       })
 
       if (result.success) {
         setPaymentResult(result)
         setShowPixPayment(true)
+
+        // 🧪 Log especial para modo teste
+        if (testMode) {
+          console.log("🧪 PIX TESTE REAL GERADO:")
+          console.log("💰 Valor:", result.totalAmount)
+          console.log("🆔 Transaction ID:", result.transactionId)
+          console.log("🎯 Agora pague R$ 0,01 para gerar Purchase real!")
+        }
       } else {
         alert(`Erro no pagamento: ${result.error}`)
       }
@@ -376,7 +388,7 @@ export function CheckoutPage() {
       )
 
       // 🧪 Log especial para modo teste
-      if (testMode) {
+      if (testMode || paymentResult.isTestMode) {
         console.log("🎯 EVENTO PURCHASE REAL GERADO PARA TIKTOK!")
         console.log("✅ Agora você pode usar este evento nas campanhas do TikTok")
         console.log("📊 Valor:", paymentResult.totalAmount)
@@ -589,8 +601,14 @@ export function CheckoutPage() {
                       />
                     </div>
                     <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">Kit Pampers Premium</h3>
-                      <p className="text-sm text-gray-600 mb-2">9 Pacotes de Fraldas + 6 Pacotes de Lenços</p>
+                      <h3 className="font-semibold text-gray-900">
+                        {testMode ? "🧪 Teste Real - Purchase Event" : "Kit Pampers Premium"}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {testMode
+                          ? "Pagamento simbólico para gerar evento Purchase real"
+                          : "9 Pacotes de Fraldas + 6 Pacotes de Lenços"}
+                      </p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Quantidade: 1</span>
                       </div>
@@ -604,11 +622,11 @@ export function CheckoutPage() {
               {/* Price Breakdown */}
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal (1 item)</span>
-                  <span className="font-medium">R$ 0,00</span>
+                  <span className="text-gray-600">{testMode ? "Teste Real" : "Subtotal (1 item)"}</span>
+                  <span className="font-medium">R$ {testMode ? "0,01" : "0,00"}</span>
                 </div>
 
-                {selectedShipping && (
+                {!testMode && selectedShipping && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Frete ({selectedShipping.toUpperCase()})</span>
                     <span className="font-medium">
@@ -617,7 +635,7 @@ export function CheckoutPage() {
                   </div>
                 )}
 
-                {selectedBumps.length > 0 && !testMode && (
+                {!testMode && selectedBumps.length > 0 && (
                   <div className="space-y-1">
                     {selectedBumps.map((bumpId) => {
                       const bump = orderBumps.find((b) => b.id === bumpId)
@@ -639,7 +657,7 @@ export function CheckoutPage() {
                     <div className={`text-2xl ${testMode ? "text-green-600" : "text-green-600"}`}>
                       R$ {calculateTotal().toFixed(2).replace(".", ",")}
                     </div>
-                    {testMode && <div className="text-xs text-green-600">TESTE REAL</div>}
+                    {testMode && <div className="text-xs text-green-600">TESTE REAL - R$ 0,01</div>}
                   </div>
                 </div>
               </div>
@@ -848,8 +866,8 @@ export function CheckoutPage() {
                 <CardHeader>
                   <CardTitle className="text-xl">Entrega</CardTitle>
                   <p className="text-sm text-gray-600">
-                    Outra pessoa irá receber o pedido?{" "}
-                    <span className="text-blue-600 cursor-pointer hover:underline">Clique aqui</span>
+                    {testMode ? "🧪 Modo teste - dados simbólicos" : "Outra pessoa irá receber o pedido?"}{" "}
+                    {!testMode && <span className="text-blue-600 cursor-pointer hover:underline">Clique aqui</span>}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -963,7 +981,9 @@ export function CheckoutPage() {
                   {/* Shipping Options */}
                   {showShippingOptions && (
                     <div className="mt-6">
-                      <h3 className="text-lg font-medium mb-4">Escolha o melhor frete para você</h3>
+                      <h3 className="text-lg font-medium mb-4">
+                        {testMode ? "🧪 Opção de Teste (R$ 0,01)" : "Escolha o melhor frete para você"}
+                      </h3>
                       {testMode && (
                         <div className="bg-green-50 p-3 rounded-lg mb-4 border border-green-200">
                           <p className="text-sm text-green-700 font-medium">
@@ -990,11 +1010,15 @@ export function CheckoutPage() {
                                 className="w-4 h-4 text-blue-600"
                               />
                               <div>
-                                <div className="font-medium">Frete Full (Receba em Até 24hrs)</div>
-                                <div className="text-sm text-gray-600">Chegará amanhã (11:00 às 16:00)</div>
+                                <div className="font-medium">
+                                  {testMode ? "🧪 Teste Real - Opção 1" : "Frete Full (Receba em Até 24hrs)"}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {testMode ? "Pagamento simbólico" : "Chegará amanhã (11:00 às 16:00)"}
+                                </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$24,90"}</div>
+                            <div className="font-bold text-lg">R$0,01</div>
                           </label>
                         </div>
 
@@ -1016,11 +1040,15 @@ export function CheckoutPage() {
                                 className="w-4 h-4 text-blue-600"
                               />
                               <div>
-                                <div className="font-medium">Correios (SEDEX)</div>
-                                <div className="text-sm text-gray-600">Em 3 dias úteis</div>
+                                <div className="font-medium">
+                                  {testMode ? "🧪 Teste Real - Opção 2" : "Correios (SEDEX)"}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {testMode ? "Pagamento simbólico" : "Em 3 dias úteis"}
+                                </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$19,90"}</div>
+                            <div className="font-bold text-lg">R$0,01</div>
                           </label>
                         </div>
 
@@ -1042,26 +1070,40 @@ export function CheckoutPage() {
                                 className="w-4 h-4 text-blue-600"
                               />
                               <div>
-                                <div className="font-medium">Correios (PAC)</div>
-                                <div className="text-sm text-gray-600">Em 12 dias úteis</div>
+                                <div className="font-medium">
+                                  {testMode ? "🧪 Teste Real - Opção 3" : "Correios (PAC)"}
+                                </div>
+                                <div className="text-sm text-gray-600">
+                                  {testMode ? "Pagamento simbólico" : "Em 12 dias úteis"}
+                                </div>
                               </div>
                             </div>
-                            <div className="font-bold text-lg">{testMode ? "R$0,01" : "R$12,80"}</div>
+                            <div className="font-bold text-lg">R$0,01</div>
                           </label>
                         </div>
                       </div>
                       <p className="text-xs text-gray-500 mt-3">
-                        A previsão de entrega pode variar de acordo com a região e facilidade de acesso ao seu endereço
+                        {testMode
+                          ? "🧪 Todas as opções geram o mesmo PIX de R$ 0,01 para teste real"
+                          : "A previsão de entrega pode variar de acordo com a região e facilidade de acesso ao seu endereço"}
                       </p>
                     </div>
                   )}
 
                   {!showShippingOptions && (
                     <div className="bg-gray-50 p-4 rounded-lg">
-                      <h3 className="font-medium mb-2">Escolha o melhor frete para você</h3>
-                      <p className="text-sm text-gray-600 mb-2">Preencha seu CEP para encontrar o melhor frete</p>
+                      <h3 className="font-medium mb-2">
+                        {testMode ? "🧪 Preencha para continuar o teste" : "Escolha o melhor frete para você"}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {testMode
+                          ? "Preencha seu CEP para continuar com o teste de R$ 0,01"
+                          : "Preencha seu CEP para encontrar o melhor frete"}
+                      </p>
                       <p className="text-xs text-gray-500">
-                        Após preenchido, encontraremos as melhores opções pra você
+                        {testMode
+                          ? "Após preenchido, você poderá gerar o PIX de teste"
+                          : "Após preenchido, encontraremos as melhores opções pra você"}
                       </p>
                     </div>
                   )}
@@ -1079,7 +1121,7 @@ export function CheckoutPage() {
                       onClick={() => setCurrentStep("payment")}
                       disabled={!showShippingOptions || !selectedShipping}
                     >
-                      IR PARA O PAGAMENTO →
+                      {testMode ? "IR PARA TESTE PIX R$ 0,01 →" : "IR PARA O PAGAMENTO →"}
                     </Button>
                   </div>
                 </CardContent>
@@ -1089,7 +1131,9 @@ export function CheckoutPage() {
             {currentStep === "payment" && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-xl">Pagamento via PIX</CardTitle>
+                  <CardTitle className="text-xl">
+                    {testMode ? "🧪 Teste Real - PIX R$ 0,01" : "Pagamento via PIX"}
+                  </CardTitle>
                   <div className="flex items-center gap-2 text-sm text-green-600">
                     <Shield className="w-4 h-4" />
                     <span>Pagamento 100% seguro e criptografado</span>

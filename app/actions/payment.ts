@@ -30,9 +30,15 @@ interface PaymentData {
   // Order data
   selectedShipping: string
   selectedBumps: number[]
+
+  // 🧪 MODO TESTE REAL
+  isTestMode?: boolean
 }
 
-const getShippingPrice = (shippingType: string) => {
+const getShippingPrice = (shippingType: string, isTestMode = false) => {
+  // 🧪 Se modo teste real, sempre R$ 0,01
+  if (isTestMode) return 0.01
+
   switch (shippingType) {
     case "full":
       return 24.9
@@ -45,7 +51,11 @@ const getShippingPrice = (shippingType: string) => {
   }
 }
 
-const getShippingTitle = (shippingType: string) => {
+const getShippingTitle = (shippingType: string, isTestMode = false) => {
+  if (isTestMode) {
+    return "🧪 Teste Real - Frete Simbólico"
+  }
+
   switch (shippingType) {
     case "full":
       return "Frete Full (Receba em Até 24hrs)"
@@ -79,7 +89,10 @@ const orderBumps: OrderBump[] = [
   },
 ]
 
-const getOrderBumpPrice = (bumpId: number) => {
+const getOrderBumpPrice = (bumpId: number, isTestMode = false) => {
+  // 🧪 Se modo teste real, order bumps não são cobrados
+  if (isTestMode) return 0
+
   const bump = orderBumps.find((b) => b.id === bumpId)
   if (!bump) return 0
   return Number.parseFloat(bump.price.replace("R$", "").replace(",", "."))
@@ -94,65 +107,96 @@ const getUTMParamsFromClient = () => {
 
 export async function processPayment(data: PaymentData) {
   try {
+    // 🧪 DETECTAR MODO TESTE REAL
+    const isTestMode = data.isTestMode || false
+
     // Get client IP
     const headersList = headers()
     const forwarded = headersList.get("x-forwarded-for")
     const ip = forwarded ? forwarded.split(",")[0] : headersList.get("x-real-ip") || "127.0.0.1"
 
     // Calculate total amount
-    const shippingCost = getShippingPrice(data.selectedShipping)
+    const shippingCost = getShippingPrice(data.selectedShipping, isTestMode)
     const orderBumpsCost = data.selectedBumps.reduce((total, bumpId) => {
-      return total + getOrderBumpPrice(bumpId)
+      return total + getOrderBumpPrice(bumpId, isTestMode)
     }, 0)
 
-    // Total amount is shipping + order bumps (product is free)
-    const totalAmount = shippingCost + orderBumpsCost
+    // 🧪 FORÇAR VALOR MÍNIMO NO MODO TESTE
+    let totalAmount = shippingCost + orderBumpsCost
+
+    if (isTestMode) {
+      totalAmount = 0.01 // Forçar exatamente R$ 0,01
+      console.log("🧪 MODO TESTE REAL: Valor forçado para R$ 0,01")
+    }
 
     // Build items array
     const items = []
 
-    // Add main product (Kit Pampers Premium) - produto gratuito, apenas frete
-    items.push({
-      id: "kit-pampers-premium",
-      title: "Kit Pampers Premium - Produto Gratuito",
-      description: "9 Pacotes de Fraldas + 6 Pacotes de Lenços (Apenas pague o frete)",
-      price: 0.01, // Valor mínimo para a API aceitar
-      quantity: 1,
-      is_physical: true,
-    })
-
-    // Add shipping as an item
-    if (data.selectedShipping && shippingCost > 0) {
+    if (isTestMode) {
+      // 🧪 MODO TESTE: Item único de R$ 0,01
       items.push({
-        id: `shipping-${data.selectedShipping}`,
-        title: getShippingTitle(data.selectedShipping),
-        description: "Frete para entrega do produto",
-        price: shippingCost - 0.01, // Subtrair o valor mínimo já adicionado no produto
+        id: "test-purchase-real",
+        title: "🧪 Teste Real - Purchase Event",
+        description: "Pagamento simbólico para gerar evento Purchase real no TikTok Pixel",
+        price: 0.01,
         quantity: 1,
         is_physical: false,
       })
+    } else {
+      // MODO NORMAL: Lógica original
+      // Add main product (Kit Pampers Premium) - produto gratuito, apenas frete
+      items.push({
+        id: "kit-pampers-premium",
+        title: "Kit Pampers Premium - Produto Gratuito",
+        description: "9 Pacotes de Fraldas + 6 Pacotes de Lenços (Apenas pague o frete)",
+        price: 0.01, // Valor mínimo para a API aceitar
+        quantity: 1,
+        is_physical: true,
+      })
+
+      // Add shipping as an item
+      if (data.selectedShipping && shippingCost > 0) {
+        items.push({
+          id: `shipping-${data.selectedShipping}`,
+          title: getShippingTitle(data.selectedShipping),
+          description: "Frete para entrega do produto",
+          price: shippingCost - 0.01, // Subtrair o valor mínimo já adicionado no produto
+          quantity: 1,
+          is_physical: false,
+        })
+      }
+
+      // Add order bumps
+      data.selectedBumps.forEach((bumpId) => {
+        const bump = orderBumps.find((b) => b.id === bumpId)
+        if (bump) {
+          const bumpPrice = getOrderBumpPrice(bumpId)
+          if (bumpPrice > 0) {
+            items.push({
+              id: `order-bump-${bumpId}`,
+              title: bump.title,
+              description: bump.description,
+              price: bumpPrice,
+              quantity: 1,
+              is_physical: true,
+            })
+          }
+        }
+      })
     }
 
-    // Add order bumps
-    data.selectedBumps.forEach((bumpId) => {
-      const bump = orderBumps.find((b) => b.id === bumpId)
-      if (bump) {
-        const bumpPrice = getOrderBumpPrice(bumpId)
-        if (bumpPrice > 0) {
-          items.push({
-            id: `order-bump-${bumpId}`,
-            title: bump.title,
-            description: bump.description,
-            price: bumpPrice,
-            quantity: 1,
-            is_physical: true,
-          })
-        }
-      }
-    })
-
     // Generate external ID
-    const externalId = `pampers-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const externalId = isTestMode
+      ? `test-real-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      : `pampers-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+    // 🧪 Log para modo teste
+    if (isTestMode) {
+      console.log("🧪 PROCESSANDO PAGAMENTO TESTE REAL:")
+      console.log("💰 Valor total:", totalAmount)
+      console.log("📦 Items:", items)
+      console.log("🆔 External ID:", externalId)
+    }
 
     // Create transaction with LiraPay
     const transaction = await createTransaction({
@@ -177,6 +221,14 @@ export async function processPayment(data: PaymentData) {
       },
     })
 
+    // 🧪 Log de sucesso para modo teste
+    if (isTestMode) {
+      console.log("✅ TRANSAÇÃO TESTE REAL CRIADA:")
+      console.log("🆔 Transaction ID:", transaction.id)
+      console.log("💰 Valor PIX:", totalAmount)
+      console.log("🎯 PIX Payload gerado para R$ 0,01")
+    }
+
     return {
       success: true,
       transaction,
@@ -184,9 +236,16 @@ export async function processPayment(data: PaymentData) {
       transactionId: transaction.id,
       externalId,
       totalAmount,
+      isTestMode, // 🧪 Passar flag para o frontend
     }
   } catch (error) {
     console.error("Payment processing error:", error)
+
+    // 🧪 Log de erro para modo teste
+    if (data.isTestMode) {
+      console.error("❌ ERRO NO PAGAMENTO TESTE REAL:", error)
+    }
+
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro interno do servidor",
